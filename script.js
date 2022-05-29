@@ -30,7 +30,7 @@ image1.addEventListener("load", () => {
             inputIndex += 1
         }
         if(inputIndex === 4 && outputIndex === 4){
-            drawOutputImage(0)
+            drawOutputImage(100)
             inputIndex += 1
         }
     })
@@ -43,11 +43,11 @@ image1.addEventListener("load", () => {
             outputIndex += 1
         }
         if(inputIndex === 4 && outputIndex === 4){
-            drawOutputImage(0)
+            drawOutputImage(100)
             outputIndex += 1
         }
     })
-    drawOutputImage(100)
+    drawOutputImage(0)
 });
 
 // RENDERIZA A IMAGEM DE SAIDA
@@ -61,7 +61,7 @@ const drawOutputImage = (zoom) => {
         const sphereRadius = outputCanvas.height/2
         const pos = HELPER.getCoordinates(i, inputCanvas.width);
         // Paint inside circle
-        if(1){
+        if(HELPER.dist(pos.x, pos.y, outputCanvas.width/2, outputCanvas.height/2) < sphereRadius){
 
             // TRANSLADAMOS O SISTEMA PARA O CENTRO DA IMAGEM
             const translatedPos = {
@@ -160,5 +160,15 @@ const HELPER = {
     // RETORNA COR DE ACORDO COM O INDICE DO CIRCULO
     getPointColor: (index) => {
         return ['#FF0000', '#00FF00', '#0000FF', '#00FFFF'][index]
+    },
+    groupDist: (group) => {
+        return (1/2)*(
+            HELPER.dist(group[0], group[0], group[1], group[1])
+            +HELPER.dist(group[0], group[0], group[2], group[2])
+            +HELPER.dist(group[0], group[0], group[3], group[3])
+            +HELPER.dist(group[1], group[1], group[2], group[2])
+            +HELPER.dist(group[1], group[1], group[3], group[3])
+            +HELPER.dist(group[2], group[2], group[3], group[3])
+        )
     }
 }
