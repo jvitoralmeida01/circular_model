@@ -14,42 +14,53 @@ image1.src = 'image1.png';
 // CARREGA A IMAGEM
 image1.addEventListener("load", () => {
     inputCtx.drawImage(image1,0,0, inputCanvas.width, inputCanvas.height);
-    let i = 1000
-    drawOutputImage()
+    // drawOutputImage(0)
+    let i = 200
+    setInterval(() => {
+        drawOutputImage(100*Math.sin(i)+100)
+        i+=0.1;
+    }, 100)
 });
 
 // RENDERIZA A IMAGEM DE SAIDA
 const drawOutputImage = (off) => {
     let scannedImage = inputCtx.getImageData(0,0,inputCanvas.width,inputCanvas.height);
-    const scannedData = scannedImage.data;
-    const newScannedData = new Uint8ClampedArray(scannedData.length);
-
-    const vectors = []
+    let scannedData = scannedImage.data;
+    const scannedImageOriginal = inputCtx.getImageData(0,0,inputCanvas.width,inputCanvas.height);
+    const scannedDataOriginal = scannedImageOriginal.data;
+    const projections = []
     for(let i = 0; i < scannedData.length; i += 4){
         const sphereRadius = outputCanvas.height/2
         const pos = HELPER.getCoordinates(i, inputCanvas.width);
         // Paint inside circle
         if(HELPER.dist(pos.x, pos.y, outputCanvas.width/2, outputCanvas.height/2) < sphereRadius){
 
-            // PRIMEIRO TENTO CRIAR UM VETOR TRANSLADADO PARA CENTRALIZAR A ORIGEM
-            let vector = HELPER.translateOrigin({x: pos.x, y: pos.y}, {offX: outputCanvas.width/2, offY: outputCanvas.height/2});
+            // TRANSLADAMOS O SISTEMA PARA O CENTRO DA IMAGEM
+            const translatedPos = {
+                x: pos.x - outputCanvas.width/2,
+                y: pos.y - outputCanvas.height/2
+            }
 
-            // AQUI TENTO ACHAR O VETOR QUE PARTE DO CENTRO DA ESFERA E PASSA NO MESMO X E Y QUE O PONTO DE INTERESSE PROJETIVO
-            vector = HELPER.getInSphereVector(pos.x, pos.y, sphereRadius);
+            // CRIAMOS UM VETOR PARTINDO DA ORIGEM E INDO ATE O PIXEL CORRESPONDENTE DA IMAGEM DE ENTRADA
+            const vector = HELPER.getInSphereVector(translatedPos.x, translatedPos.y, sphereRadius+10)
+            const projectedVector = HELPER.getProjectedVector(vector, sphereRadius-off)
 
-            // COM ESSE VETOR EU TENTO ACHAR A INTERSECÃO DELE COM O PLANO Z=1
-            vector = HELPER.getProjectedVector(vector);
+            // OBTEMOS O INDEX CORRESPONDENTE DO PIXEL NO ARRAY DE PIXELS DA IMAGEM DE ENTRADA
+            const untranslatedVector = {
+                x: Math.ceil(projectedVector.x) + inputCanvas.width/2,
+                y: Math.ceil(projectedVector.y) + inputCanvas.height/2,
+                z: Math.ceil(projectedVector.z)
+            }
+
+            projections.push(untranslatedVector)
             
-            // E COM ISSO UTILIZO AS COORDENADAS X E Y DESSA INTERSECÇÃO QUE REPRESENTAM AS COORDENADAS DO PONTO COORESPONDENTE NA IMAGEM 
-            const basePixelIndex = Math.floor(HELPER.getIndex(vector.x, vector.y, outputCanvas.width));
-
-            vectors.push(basePixelIndex);
-
-            // AQUI ATRIBUO AS CORES OBTIDAS
-            scannedData[i+0] = scannedData[basePixelIndex+0];
-            scannedData[i+1] = scannedData[basePixelIndex+1];
-            scannedData[i+2] = scannedData[basePixelIndex+2];
-            scannedData[i+3] = scannedData[basePixelIndex+3];
+            const projectedIndex = HELPER.getIndex(untranslatedVector.x, untranslatedVector.y, inputCanvas.width);
+            
+            // E ATRIBUIMOS AS CORES OBTIDAS
+            scannedData[i+0] = scannedDataOriginal[projectedIndex+0]
+            scannedData[i+1] = scannedDataOriginal[projectedIndex+1]
+            scannedData[i+2] = scannedDataOriginal[projectedIndex+2] 
+            scannedData[i+3] = 255;
         }else{
             //QUANDO NAO ESTAO DENTRO DO RAIO DA ESFERA EU ATRIBUO A COR PRETA
             scannedData[i+0] = 0;
@@ -58,7 +69,6 @@ const drawOutputImage = (off) => {
             scannedData[i+3] = 255;
         }
    }
-   console.log(vectors)
    //AQUI A IMAGEM É RENDERIZADA
    outputCtx.putImageData(scannedImage,0,0);
 }
@@ -94,11 +104,12 @@ const HELPER = {
         }
     },
     // MULTIPLICA O "inSphereVector" POR UM NÚMERO (mult) PARA QUE ELE INTERCEPTE O PLANO Z=1 
-    getProjectedVector: (vector) => {
-        const mult = 1/vector.z;
+    getProjectedVector: (vector, sphereRadius) => {
+        const mult = sphereRadius/vector.z;
         return {
             x: vector.x*mult,
-            y: vector.y*mult
+            y: vector.y*mult,
+            z: vector.z*mult
         }
     },
     // RETORNA O VETOR 3D DE MAGNITUDE 1, QUE INTERSECTA A ESFERA, E QUE PARTE DO CENTRO DA ESFERA E PASSA NO MESMO X E Y QUE O PONTO DE INTERESSE
