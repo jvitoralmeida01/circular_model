@@ -11,19 +11,47 @@ const image1 = new Image();
 image1.crossOrigin = "Anonymous";
 image1.src = 'image1.png';
 
+const inputPoints = []
+let inputIndex = 0
+const outputPoints = []
+let outputIndex = 0
+
 // CARREGA A IMAGEM
 image1.addEventListener("load", () => {
+
     inputCtx.drawImage(image1,0,0, inputCanvas.width, inputCanvas.height);
-    // drawOutputImage(0)
-    let i = 200
-    setInterval(() => {
-        drawOutputImage(100*Math.sin(i)+100)
-        i+=0.1;
-    }, 100)
+
+    // ESPERA OS CLICKS NO CANVAS DE INPUT
+    inputCanvas.addEventListener('click', (e) => {
+    
+        if(inputIndex < 4){
+            HELPER.drawPoint(inputCtx, e.offsetX, e.offsetY, HELPER.getPointColor(inputPoints.length));
+            inputPoints.push({x: e.offsetX, y: e.offsetY})
+            inputIndex += 1
+        }
+        if(inputIndex === 4 && outputIndex === 4){
+            drawOutputImage(0)
+            inputIndex += 1
+        }
+    })
+    // ESPERA OS CLICKS NO CANVAS DE OUTPUT
+    outputCanvas.addEventListener('click', (e) => {
+
+        if(outputIndex < 4){
+            HELPER.drawPoint(outputCtx, e.offsetX, e.offsetY, HELPER.getPointColor(outputPoints.length));
+            outputPoints.push({x: e.offsetX, y: e.offsetY}) 
+            outputIndex += 1
+        }
+        if(inputIndex === 4 && outputIndex === 4){
+            drawOutputImage(0)
+            outputIndex += 1
+        }
+    })
+    drawOutputImage(100)
 });
 
 // RENDERIZA A IMAGEM DE SAIDA
-const drawOutputImage = (off) => {
+const drawOutputImage = (zoom) => {
     let scannedImage = inputCtx.getImageData(0,0,inputCanvas.width,inputCanvas.height);
     let scannedData = scannedImage.data;
     const scannedImageOriginal = inputCtx.getImageData(0,0,inputCanvas.width,inputCanvas.height);
@@ -33,7 +61,7 @@ const drawOutputImage = (off) => {
         const sphereRadius = outputCanvas.height/2
         const pos = HELPER.getCoordinates(i, inputCanvas.width);
         // Paint inside circle
-        if(HELPER.dist(pos.x, pos.y, outputCanvas.width/2, outputCanvas.height/2) < sphereRadius){
+        if(1){
 
             // TRANSLADAMOS O SISTEMA PARA O CENTRO DA IMAGEM
             const translatedPos = {
@@ -43,7 +71,7 @@ const drawOutputImage = (off) => {
 
             // CRIAMOS UM VETOR PARTINDO DA ORIGEM E INDO ATE O PIXEL CORRESPONDENTE DA IMAGEM DE ENTRADA
             const vector = HELPER.getInSphereVector(translatedPos.x, translatedPos.y, sphereRadius+10)
-            const projectedVector = HELPER.getProjectedVector(vector, sphereRadius-off)
+            const projectedVector = HELPER.getProjectedVector(vector, sphereRadius-zoom)
 
             // OBTEMOS O INDEX CORRESPONDENTE DO PIXEL NO ARRAY DE PIXELS DA IMAGEM DE ENTRADA
             const untranslatedVector = {
@@ -120,5 +148,17 @@ const HELPER = {
     // RETORNA A MAGNITUDE DO VETOR
     magnitude: (vector) => {
         return Math.sqrt(vector.x*vector.x + vector.y*vector.y + vector.z*vector.z);
+    },
+    // DESENHA PONTO NO CANVAS
+    drawPoint: (ctx, x, y, color) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+    },
+    // RETORNA COR DE ACORDO COM O INDICE DO CIRCULO
+    getPointColor: (index) => {
+        return ['#FF0000', '#00FF00', '#0000FF', '#00FFFF'][index]
     }
 }
