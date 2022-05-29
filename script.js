@@ -1,25 +1,37 @@
-const inputCanvas = document.getElementById('input');
-const outputCanvas = document.getElementById('output');
-const inputCtx = inputCanvas.getContext('2d');
-const outputCtx = outputCanvas.getContext('2d');
+let inputCanvas = document.getElementById('input');
+let outputCanvas = document.getElementById('output');
+let inputCtx =  inputCanvas.getContext('2d');
+let outputCtx = outputCanvas.getContext('2d');
 
 inputCanvas.width   = 800;
 inputCanvas.height  = 450;
 outputCanvas.width  = inputCanvas.width;
 outputCanvas.height = inputCanvas.height;
-const image1 = new Image();
-image1.crossOrigin = "Anonymous";
-image1.src = 'image1.png';
+
+var newImage = new Image();
 
 const inputPoints = []
 let inputIndex = 0
 const outputPoints = []
 let outputIndex = 0
 
-// CARREGA A IMAGEM
-image1.addEventListener("load", () => {
+// LOADING CUSTOM IMAGE
+let imgInput = document.getElementById('input-button');
+  imgInput.addEventListener('change', function(e) {
+    if(e.target.files) {
+      let imageFile = e.target.files[0]; //here we get the image file
+      var reader = new FileReader();
+      reader.readAsDataURL(imageFile);
+      reader.onloadend = function (e) {
+        newImage.src = e.target.result; 
+      }
+    }
+  });
 
-    inputCtx.drawImage(image1,0,0, inputCanvas.width, inputCanvas.height);
+// CARREGA A IMAGEM
+newImage.addEventListener("load", () => {
+
+    inputCtx.drawImage(newImage,0,0, inputCanvas.width, inputCanvas.height);
 
     // ESPERA OS CLICKS NO CANVAS DE INPUT
     inputCanvas.addEventListener('click', (e) => {
